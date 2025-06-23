@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Cam - Virtual Camera Module</title>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #5855eb;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --border: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon {
+            font-size: 32px;
+            background: linear-gradient(135deg, var(--primary-color), #8b5cf6);
+            border-radius: var(--radius-sm);
+            padding: 8px;
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-content {
+            padding: 24px;
+        }
+
+        .setting-group {
+            margin-bottom: 24px;
+        }
+
+        .setting-label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .setting-description {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+        }
+
+        .toggle-switch input[type="checkbox"] {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-switch label {
+            display: block;
+            width: 48px;
+            height: 24px;
+            background: var(--secondary-color);
+            border-radius: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .toggle-switch label::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch input[type="checkbox"]:checked + label {
+            background: var(--primary-color);
+        }
+
+        .toggle-switch input[type="checkbox"]:checked + label::after {
+            transform: translateX(24px);
+        }
+
+        .file-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            background: var(--surface-hover);
+            border-color: var(--primary-color);
+        }
+
+        .file-name {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .select-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+
+        .media-type-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .media-type-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 16px;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .media-type-btn.active {
+            border-color: var(--primary-color);
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary-color);
+        }
+
+        .media-icon {
+            font-size: 24px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin: 32px 0;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 16px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .message-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .message-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .message-info {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary-color);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .file-list {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-top: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-icon {
+            font-size: 16px;
+        }
+
+        .file-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-name-text {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .app-list {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-top: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .app-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .app-item:hover {
+            background: var(--surface-hover);
+            border-color: var(--primary-color);
+        }
+
+        .app-item.selected {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .app-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .app-item.selected .app-checkbox {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .app-checkbox::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .app-item.selected .app-checkbox::after {
+            opacity: 1;
+        }
+
+        .app-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--primary-color), #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .app-info {
+            flex: 1;
+        }
+
+        .app-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .app-package {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .media-type-selector {
+                flex-direction: column;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .file-input-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">📹</div>
+                <h1>Magic Cam</h1>
+            </div>
+            <div class="status-indicator" id="statusIndicator">
+                <div class="status-dot"></div>
+                <span>Module Active</span>
+            </div>
+        </header>
+
+        <main>
+            <div id="messages"></div>
+
+            <!-- Module Status Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Module Status</h2>
+                </div>
+                <div class="card-content">
+                    <div class="setting-group">
+                        <label class="setting-label">Enable Module</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="moduleEnabled" checked>
+                            <label for="moduleEnabled"></label>
+                        </div>
+                        <p class="setting-description">Enable/disable the Magic Cam module</p>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label class="setting-label">Virtual Mode</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="virtualMode" checked>
+                            <label for="virtualMode"></label>
+                        </div>
+                        <p class="setting-description">Use virtual media instead of real camera</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Applications Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Target Applications</h2>
+                </div>
+                <div class="card-content">
+                    <div class="setting-group">
+                        <label class="setting-label">Select Apps to Hook</label>
+                        <div class="app-list" id="appList">
+                            <div class="file-item">
+                                <div class="file-info">
+                                    <span class="file-icon">📱</span>
+                                    <span>Loading applications...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="setting-description">Choose which apps should use the virtual camera</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Virtual Media Settings Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Virtual Media Settings</h2>
+                </div>
+                <div class="card-content">
+                    <!-- Media Type Selection -->
+                    <div class="setting-group">
+                        <label class="setting-label">Media Type</label>
+                        <div class="media-type-selector">
+                            <button class="media-type-btn active" data-type="video">
+                                <span class="media-icon">🎥</span>
+                                <span>Video</span>
+                            </button>
+                            <button class="media-type-btn" data-type="photo">
+                                <span class="media-icon">📷</span>
+                                <span>Photo</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Video Settings -->
+                    <div class="media-settings" id="videoSettings">
+                        <div class="setting-group">
+                            <label class="setting-label">Video Source</label>
+                            <div class="file-input-wrapper">
+                                <button class="btn btn-outline" id="selectVideoBtn">
+                                    📁 Choose Video File
+                                </button>
+                                <span class="file-name" id="videoFileName">No video selected</span>
+                            </div>
+                            <p class="setting-description">Select a video file to use as virtual camera input</p>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label class="setting-label">Video Quality</label>
+                            <select class="select-input" id="videoQuality">
+                                <option value="720p">720p (HD)</option>
+                                <option value="1080p" selected>1080p (Full HD)</option>
+                                <option value="1440p">1440p (2K)</option>
+                                <option value="2160p">2160p (4K)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label class="setting-label">Loop Video</label>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="loopVideo" checked>
+                                <label for="loopVideo"></label>
+                            </div>
+                            <p class="setting-description">Automatically restart video when it ends</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Photo Settings -->
+                    <div class="media-settings hidden" id="photoSettings">
+                        <div class="setting-group">
+                            <label class="setting-label">Photo Source</label>
+                            <div class="file-input-wrapper">
+                                <button class="btn btn-outline" id="selectPhotoBtn">
+                                    📁 Choose Photo File
+                                </button>
+                                <span class="file-name" id="photoFileName">No photo selected</span>
+                            </div>
+                            <p class="setting-description">Select a photo to use as virtual camera input</p>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label class="setting-label">Photo Resolution</label>
+                            <select class="select-input" id="photoResolution">
+                                <option value="720p">720p (1280x720)</option>
+                                <option value="1080p" selected>1080p (1920x1080)</option>
+                                <option value="1440p">1440p (2560x1440)</option>
+                                <option value="2160p">2160p (3840x2160)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Media Files List -->
+                    <div class="setting-group">
+                        <label class="setting-label">Available Media Files</label>
+                        <div class="file-list" id="mediaFilesList">
+                            <div class="file-item">
+                                <div class="file-info">
+                                    <span class="file-icon">📁</span>
+                                    <span>Loading media files...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="setting-description">Files stored in /sdcard/MagicCam/ directory</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Settings Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Advanced Settings</h2>
+                </div>
+                <div class="card-content">
+                    <div class="setting-group">
+                        <label class="setting-label">Detection Bypass</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="detectionBypass" checked>
+                            <label for="detectionBypass"></label>
+                        </div>
+                        <p class="setting-description">Enable stealth mode to avoid detection by apps</p>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label class="setting-label">Debug Logging</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="debugLogging">
+                            <label for="debugLogging"></label>
+                        </div>
+                        <p class="setting-description">Enable detailed logging for troubleshooting</p>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label class="setting-label">Hook Method</label>
+                        <select class="select-input" id="hookMethod">
+                            <option value="camera2ndk" selected>Camera2 NDK</option>
+                            <option value="hal">Camera HAL</option>
+                            <option value="both">Both Methods</option>
+                        </select>
+                        <p class="setting-description">Choose the camera hooking method</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="saveSettings">💾 Save Settings</button>
+                <button class="btn btn-outline" id="resetSettings">🔄 Reset to Default</button>
+                <button class="btn btn-outline" id="openMagicCamFolder">📁 Open MagicCam Folder</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // MMRL WebUI X API Integration
+        let moduleInterface, fileInterface, packageManager, userManager;
+        let selectedApps = new Set();
+
+        // Configuration state
+        let config = {
+            moduleEnabled: true,
+            virtualMode: true,
+            mediaType: 'video',
+            videoPath: '',
+            photoPath: '',
+            videoQuality: '1080p',
+            photoResolution: '1080p',
+            loopVideo: true,
+            detectionBypass: true,
+            debugLogging: false,
+            hookMethod: 'camera2ndk',
+            selectedApps: []
+        };
+
+        // Initialize the WebUI with MMRL APIs
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initializeMMRLAPIs();
+                await loadConfiguration();
+                setupEventListeners();
+                await loadInstalledApps();
+                await loadMediaFiles();
+                showMessage('Magic Cam WebUI loaded successfully', 'success');
+            } catch (error) {
+                console.error('Failed to initialize WebUI:', error);
+                showMessage('Failed to initialize WebUI APIs', 'error');
+                // Fallback to basic functionality
+                setupEventListeners();
+                loadConfiguration();
+            }
+        });
+
+        async function initializeMMRLAPIs() {
+            try {
+                // Initialize MMRL WebUI X APIs
+                if (typeof window.ModuleInterface !== 'undefined') {
+                    moduleInterface = new window.ModuleInterface();
+                    console.log('ModuleInterface initialized');
+                }
+
+                if (typeof window.FileInterface !== 'undefined') {
+                    fileInterface = new window.FileInterface();
+                    console.log('FileInterface initialized');
+                }
+
+                if (typeof window.PackageManagerInterface !== 'undefined') {
+                    packageManager = new window.PackageManagerInterface();
+                    console.log('PackageManagerInterface initialized');
+                }
+
+                if (typeof window.UserManagerInterface !== 'undefined') {
+                    userManager = new window.UserManagerInterface();
+                    console.log('UserManagerInterface initialized');
+                }
+
+                // Check if we're running in MMRL environment
+                if (moduleInterface) {
+                    const moduleInfo = await moduleInterface.getModuleInfo();
+                    console.log('Module info:', moduleInfo);
+                }
+
+            } catch (error) {
+                console.warn('MMRL APIs not available, using fallback mode:', error);
+            }
+        }
+
+        async function loadInstalledApps() {
+            try {
+                const appList = document.getElementById('appList');
+                
+                if (packageManager) {
+                    // Use MMRL PackageManagerInterface to get installed apps
+                    const installedApps = await packageManager.getInstalledPackages();
+                    
+                    // Filter for camera-related apps
+                    const cameraApps = installedApps.filter(app => {
+                        const pkg = app.packageName.toLowerCase();
+                        const label = (app.applicationLabel || '').toLowerCase();
+                        
+                        return pkg.includes('camera') || 
+                               pkg.includes('instagram') || 
+                               pkg.includes('snapchat') || 
+                               pkg.includes('whatsapp') || 
+                               pkg.includes('zoom') || 
+                               pkg.includes('skype') || 
+                               pkg.includes('discord') ||
+                               label.includes('camera') ||
+                               label.includes('photo');
+                    });
+
+                    if (cameraApps.length > 0) {
+                        appList.innerHTML = cameraApps.map(app => `
+                            <div class="app-item ${selectedApps.has(app.packageName) ? 'selected' : ''}" 
+                                 data-package="${app.packageName}">
+                                <div class="app-checkbox"></div>
+                                <div class="app-icon">📱</div>
+                                <div class="app-info">
+                                    <div class="app-name">${app.applicationLabel || app.packageName}</div>
+                                    <div class="app-package">${app.packageName}</div>
+                                </div>
+                            </div>
+                        `).join('');
+
+                        // Add click listeners
+                        appList.querySelectorAll('.app-item').forEach(item => {
+                            item.addEventListener('click', () => {
+                                const packageName = item.dataset.package;
+                                
+                                if (selectedApps.has(packageName)) {
+                                    selectedApps.delete(packageName);
+                                    item.classList.remove('selected');
+                                } else {
+                                    selectedApps.add(packageName);
+                                    item.classList.add('selected');
+                                }
+                                
+                                config.selectedApps = Array.from(selectedApps);
+                                saveConfiguration();
+                            });
+                        });
+
+                        showMessage(`Found ${cameraApps.length} camera-related apps`, 'info');
+                    } else {
+                        appList.innerHTML = `
+                            <div class="file-item">
+                                <div class="file-info">
+                                    <span class="file-icon">📱</span>
+                                    <span>No camera apps found</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Fallback: Show common camera apps
+                    const commonApps = [
+                        { name: 'Camera', package: 'com.android.camera' },
+                        { name: 'Google Camera', package: 'com.google.android.GoogleCamera' },
+                        { name: 'Instagram', package: 'com.instagram.android' },
+                        { name: 'Snapchat', package: 'com.snapchat.android' },
+                        { name: 'WhatsApp', package: 'com.whatsapp' },
+                        { name: 'Zoom', package: 'us.zoom.videomeetings' },
+                        { name: 'Discord', package: 'com.discord' }
+                    ];
+
+                    appList.innerHTML = commonApps.map(app => `
+                        <div class="app-item ${selectedApps.has(app.package) ? 'selected' : ''}" 
+                             data-package="${app.package}">
+                            <div class="app-checkbox"></div>
+                            <div class="app-icon">📱</div>
+                            <div class="app-info">
+                                <div class="app-name">${app.name}</div>
+                                <div class="app-package">${app.package}</div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    // Add click listeners
+                    appList.querySelectorAll('.app-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            const packageName = item.dataset.package;
+                            
+                            if (selectedApps.has(packageName)) {
+                                selectedApps.delete(packageName);
+                                item.classList.remove('selected');
+                            } else {
+                                selectedApps.add(packageName);
+                                item.classList.add('selected');
+                            }
+                            
+                            config.selectedApps = Array.from(selectedApps);
+                            saveConfiguration();
+                        });
+                    });
+
+                    showMessage('Using fallback app list (install MMRL for full app detection)', 'info');
+                }
+
+            } catch (error) {
+                console.error('Failed to load apps:', error);
+                showMessage('Failed to load installed applications', 'error');
+            }
+        }
+
+        async function loadMediaFiles() {
+            try {
+                const filesList = document.getElementById('mediaFilesList');
+                
+                if (fileInterface) {
+                    // Use MMRL FileInterface to scan MagicCam directory
+                    const magicCamPath = '/sdcard/MagicCam';
+                    
+                    try {
+                        const files = await fileInterface.listFiles(magicCamPath);
+                        const mediaFiles = files.filter(file => {
+                            const ext = file.name.toLowerCase();
+                            return ext.endsWith('.mp4') || ext.endsWith('.avi') || 
+                                   ext.endsWith('.mov') || ext.endsWith('.mkv') ||
+                                   ext.endsWith('.jpg') || ext.endsWith('.jpeg') || 
+                                   ext.endsWith('.png') || ext.endsWith('.gif');
+                        });
+
+                        if (mediaFiles.length > 0) {
+                            filesList.innerHTML = mediaFiles.map(file => {
+                                const isVideo = file.name.match(/\.(mp4|avi|mov|mkv)$/i);
+                                const icon = isVideo ? '🎥' : '📷';
+                                const type = isVideo ? 'video' : 'photo';
+                                
+                                return `
+                                    <div class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">${icon}</span>
+                                            <div class="file-details">
+                                                <span class="file-name-text">${file.name}</span>
+                                                <span class="file-size">${type} • ${formatFileSize(file.size || 0)}</span>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-outline btn-small" onclick="useFile('${file.name}', '${type}')">
+                                            Use
+                                        </button>
+                                    </div>
+                                `;
+                            }).join('');
+                        } else {
+                            filesList.innerHTML = `
+                                <div class="file-item">
+                                    <div class="file-info">
+                                        <span class="file-icon">📁</span>
+                                        <span>No media files found in /sdcard/MagicCam/</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        // Directory might not exist
+                        filesList.innerHTML = `
+                            <div class="file-item">
+                                <div class="file-info">
+                                    <span class="file-icon">📁</span>
+                                    <span>MagicCam directory not found - will be created on first use</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Fallback: Show current config files
+                    const files = [];
+                    if (config.videoPath) {
+                        files.push({
+                            name: config.videoPath.split('/').pop(),
+                            type: 'video',
+                            icon: '🎥'
+                        });
+                    }
+                    if (config.photoPath) {
+                        files.push({
+                            name: config.photoPath.split('/').pop(),
+                            type: 'photo',
+                            icon: '📷'
+                        });
+                    }
+                    
+                    if (files.length === 0) {
+                        filesList.innerHTML = `
+                            <div class="file-item">
+                                <div class="file-info">
+                                    <span class="file-icon">📁</span>
+                                    <span>No media files configured</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        filesList.innerHTML = files.map(file => `
+                            <div class="file-item">
+                                <div class="file-info">
+                                    <span class="file-icon">${file.icon}</span>
+                                    <div class="file-details">
+                                        <span class="file-name-text">${file.name}</span>
+                                        <span class="file-size">${file.type}</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-outline btn-small" onclick="useFile('${file.name}', '${file.type}')">
+                                    Use
+                                </button>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Failed to load media files:', error);
+                showMessage('Failed to load media files', 'error');
+            }
+        }
+
+        function setupEventListeners() {
+            // Module toggles
+            document.getElementById('moduleEnabled').addEventListener('change', (e) => {
+                config.moduleEnabled = e.target.checked;
+                updateModuleStatus();
+                saveConfiguration();
+            });
+
+            document.getElementById('virtualMode').addEventListener('change', (e) => {
+                config.virtualMode = e.target.checked;
+                updateModuleStatus();
+                saveConfiguration();
+            });
+
+            // Media type selection
+            document.querySelectorAll('.media-type-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.media-type-btn').forEach(b => b.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    
+                    const mediaType = e.currentTarget.dataset.type;
+                    config.mediaType = mediaType;
+                    
+                    // Show/hide appropriate settings
+                    document.getElementById('videoSettings').classList.toggle('hidden', mediaType !== 'video');
+                    document.getElementById('photoSettings').classList.toggle('hidden', mediaType !== 'photo');
+                    
+                    saveConfiguration();
+                });
+            });
+
+            // File selection using MMRL FileInputInterface
+            document.getElementById('selectVideoBtn').addEventListener('click', async () => {
+                await selectMediaFile('video');
+            });
+
+            document.getElementById('selectPhotoBtn').addEventListener('click', async () => {
+                await selectMediaFile('photo');
+            });
+
+            // Settings
+            document.getElementById('videoQuality').addEventListener('change', (e) => {
+                config.videoQuality = e.target.value;
+                saveConfiguration();
+            });
+
+            document.getElementById('photoResolution').addEventListener('change', (e) => {
+                config.photoResolution = e.target.value;
+                saveConfiguration();
+            });
+
+            document.getElementById('loopVideo').addEventListener('change', (e) => {
+                config.loopVideo = e.target.checked;
+                saveConfiguration();
+            });
+
+            document.getElementById('detectionBypass').addEventListener('change', (e) => {
+                config.detectionBypass = e.target.checked;
+                saveConfiguration();
+            });
+
+            document.getElementById('debugLogging').addEventListener('change', (e) => {
+                config.debugLogging = e.target.checked;
+                saveConfiguration();
+            });
+
+            document.getElementById('hookMethod').addEventListener('change', (e) => {
+                config.hookMethod = e.target.value;
+                saveConfiguration();
+            });
+
+            // Action buttons
+            document.getElementById('saveSettings').addEventListener('click', saveConfiguration);
+            document.getElementById('resetSettings').addEventListener('click', resetConfiguration);
+            document.getElementById('openMagicCamFolder').addEventListener('click', openMagicCamFolder);
+        }
+
+        async function selectMediaFile(type) {
+            try {
+                if (typeof window.FileInputInterface !== 'undefined') {
+                    // Use MMRL FileInputInterface for proper file selection
+                    const fileInput = new window.FileInputInterface();
+                    
+                    const accept = type === 'video' ? 
+                        'video/mp4,video/avi,video/mov,video/mkv' : 
+                        'image/jpeg,image/jpg,image/png,image/gif';
+                    
+                    const file = await fileInput.selectFile({
+                        accept: accept,
+                        multiple: false
+                    });
+                    
+                    if (file) {
+                        await handleFileSelection(file, type);
+                    }
+                } else {
+                    // Fallback: Create hidden file input
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = type === 'video' ? 'video/*' : 'image/*';
+                    
+                    input.onchange = (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                            handleFileSelection(file, type);
+                        }
+                    };
+                    
+                    input.click();
+                }
+            } catch (error) {
+                console.error('Failed to select file:', error);
+                showMessage('Failed to open file selector', 'error');
+            }
+        }
+
+        async function handleFileSelection(file, type) {
+            try {
+                const fileName = file.name;
+                const fileSize = formatFileSize(file.size || 0);
+                
+                // Copy file to MagicCam directory using FileInterface
+                if (fileInterface) {
+                    const magicCamPath = '/sdcard/MagicCam';
+                    const targetPath = `${magicCamPath}/${fileName}`;
+                    
+                    // Ensure directory exists
+                    await fileInterface.createDirectory(magicCamPath);
+                    
+                    // Copy file
+                    await fileInterface.copyFile(file, targetPath);
+                    
+                    showMessage(`${type} file copied to MagicCam directory`, 'success');
+                } else {
+                    showMessage(`${type} file selected (copy manually to /sdcard/MagicCam/)`, 'info');
+                }
+                
+                // Update UI and config
+                if (type === 'video') {
+                    document.getElementById('videoFileName').textContent = `${fileName} (${fileSize})`;
+                    config.videoPath = `/sdcard/MagicCam/${fileName}`;
+                } else {
+                    document.getElementById('photoFileName').textContent = `${fileName} (${fileSize})`;
+                    config.photoPath = `/sdcard/MagicCam/${fileName}`;
+                }
+                
+                await loadMediaFiles(); // Refresh the file list
+                saveConfiguration();
+                
+            } catch (error) {
+                console.error('Failed to handle file selection:', error);
+                showMessage('Failed to process selected file', 'error');
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function useFile(fileName, type) {
+            if (type === 'video') {
+                config.videoPath = `/sdcard/MagicCam/${fileName}`;
+                config.mediaType = 'video';
+                document.getElementById('videoFileName').textContent = fileName;
+                
+                // Switch to video tab
+                document.querySelectorAll('.media-type-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.type === 'video');
+                });
+                document.getElementById('videoSettings').classList.remove('hidden');
+                document.getElementById('photoSettings').classList.add('hidden');
+                
+            } else {
+                config.photoPath = `/sdcard/MagicCam/${fileName}`;
+                config.mediaType = 'photo';
+                document.getElementById('photoFileName').textContent = fileName;
+                
+                // Switch to photo tab
+                document.querySelectorAll('.media-type-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.type === 'photo');
+                });
+                document.getElementById('photoSettings').classList.remove('hidden');
+                document.getElementById('videoSettings').classList.add('hidden');
+            }
+            
+            saveConfiguration();
+            showMessage(`Now using ${fileName} as ${type} source`, 'success');
+        }
+
+        async function openMagicCamFolder() {
+            try {
+                if (fileInterface) {
+                    // Use MMRL FileInterface to open directory
+                    await fileInterface.openDirectory('/sdcard/MagicCam');
+                } else {
+                    showMessage('Open /sdcard/MagicCam/ in your file manager to add media files', 'info');
+                }
+            } catch (error) {
+                console.error('Failed to open directory:', error);
+                showMessage('Open /sdcard/MagicCam/ in your file manager to add media files', 'info');
+            }
+        }
+
+        async function loadConfiguration() {
+            try {
+                if (moduleInterface) {
+                    // Use MMRL ModuleInterface to read module config
+                    const moduleConfig = await moduleInterface.readConfig('config.json');
+                    if (moduleConfig) {
+                        config = { ...config, ...JSON.parse(moduleConfig) };
+                    }
+                } else {
+                    // Fallback to localStorage
+                    const saved = localStorage.getItem('magiccam_config');
+                    if (saved) {
+                        const savedConfig = JSON.parse(saved);
+                        config = { ...config, ...savedConfig };
+                    }
+                }
+                
+                // Load selected apps
+                if (config.selectedApps) {
+                    selectedApps = new Set(config.selectedApps);
+                }
+                
+                updateUI();
+            } catch (error) {
+                console.error('Failed to load configuration:', error);
+                updateUI();
+            }
+        }
+
+        async function saveConfiguration() {
+            try {
+                config.selectedApps = Array.from(selectedApps);
+                
+                if (moduleInterface) {
+                    // Use MMRL ModuleInterface to save module config
+                    await moduleInterface.writeConfig('config.json', JSON.stringify(config, null, 2));
+                    console.log('Configuration saved via ModuleInterface');
+                } else {
+                    // Fallback to localStorage
+                    localStorage.setItem('magiccam_config', JSON.stringify(config));
+                    console.log('Configuration saved to localStorage');
+                }
+                
+                // Apply configuration to native module
+                await applyConfiguration();
+                
+            } catch (error) {
+                console.error('Failed to save configuration:', error);
+                showMessage('Failed to save configuration', 'error');
+            }
+        }
+
+        async function applyConfiguration() {
+            try {
+                if (moduleInterface) {
+                    // Write settings file for native module
+                    const settings = [
+                        `virtual_mode=${config.virtualMode ? '1' : '0'}`,
+                        `media_type=${config.mediaType}`,
+                        `video_path=${config.videoPath}`,
+                        `photo_path=${config.photoPath}`,
+                        `video_quality=${config.videoQuality}`,
+                        `photo_resolution=${config.photoResolution}`,
+                        `loop_video=${config.loopVideo ? '1' : '0'}`,
+                        `detection_bypass=${config.detectionBypass ? '1' : '0'}`,
+                        `debug_logging=${config.debugLogging ? '1' : '0'}`,
+                        `hook_method=${config.hookMethod}`
+                    ].join('\n');
+                    
+                    await moduleInterface.writeConfig('settings.conf', settings);
+                    
+                    // Write target apps list
+                    if (config.selectedApps.length > 0) {
+                        await moduleInterface.writeConfig('target_apps.txt', config.selectedApps.join('\n'));
+                    }
+                    
+                    console.log('Configuration applied to native module');
+                }
+            } catch (error) {
+                console.error('Failed to apply configuration:', error);
+            }
+        }
+
+        function resetConfiguration() {
+            if (confirm('Are you sure you want to reset all settings to default?')) {
+                config = {
+                    moduleEnabled: true,
+                    virtualMode: true,
+                    mediaType: 'video',
+                    videoPath: '',
+                    photoPath: '',
+                    videoQuality: '1080p',
+                    photoResolution: '1080p',
+                    loopVideo: true,
+                    detectionBypass: true,
+                    debugLogging: false,
+                    hookMethod: 'camera2ndk',
+                    selectedApps: []
+                };
+                
+                selectedApps.clear();
+                updateUI();
+                loadMediaFiles();
+                saveConfiguration();
+                showMessage('Configuration reset to defaults', 'success');
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('moduleEnabled').checked = config.moduleEnabled;
+            document.getElementById('virtualMode').checked = config.virtualMode;
+            document.getElementById('videoQuality').value = config.videoQuality;
+            document.getElementById('photoResolution').value = config.photoResolution;
+            document.getElementById('loopVideo').checked = config.loopVideo;
+            document.getElementById('detectionBypass').checked = config.detectionBypass;
+            document.getElementById('debugLogging').checked = config.debugLogging;
+            document.getElementById('hookMethod').value = config.hookMethod;
+            
+            // Set media type
+            document.querySelectorAll('.media-type-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === config.mediaType);
+            });
+            
+            // Show appropriate settings
+            document.getElementById('videoSettings').classList.toggle('hidden', config.mediaType !== 'video');
+            document.getElementById('photoSettings').classList.toggle('hidden', config.mediaType !== 'photo');
+            
+            // Update file names
+            if (config.videoPath) {
+                const fileName = config.videoPath.split('/').pop();
+                document.getElementById('videoFileName').textContent = fileName;
+            }
+            
+            if (config.photoPath) {
+                const fileName = config.photoPath.split('/').pop();
+                document.getElementById('photoFileName').textContent = fileName;
+            }
+            
+            updateModuleStatus();
+        }
+
+        function updateModuleStatus() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusDot = statusIndicator.querySelector('.status-dot');
+            const statusText = statusIndicator.querySelector('span');
+            
+            if (config.moduleEnabled && config.virtualMode) {
+                statusDot.style.background = 'var(--success-color)';
+                statusText.textContent = 'Virtual Mode Active';
+            } else if (config.moduleEnabled) {
+                statusDot.style.background = 'var(--warning-color)';
+                statusText.textContent = 'Module Enabled';
+            } else {
+                statusDot.style.background = 'var(--error-color)';
+                statusText.textContent = 'Module Disabled';
+            }
+        }
+
+        function showMessage(text, type = 'info') {
+            const messagesContainer = document.getElementById('messages');
+            
+            // Remove existing messages of the same type
+            messagesContainer.querySelectorAll(`.message-${type}`).forEach(msg => msg.remove());
+            
+            const message = document.createElement('div');
+            message.className = `message message-${type}`;
+            message.textContent = text;
+            
+            messagesContainer.appendChild(message);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (message.parentNode) {
+                    message.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

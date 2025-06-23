@@ -56,17 +56,19 @@ set_perm $MODPATH/zygisk/libmagiccam.so 0 0 0755
 set_perm_recursive $MODPATH/webui 0 0 0755 0644
 
 # Create default configuration
-cat > $MODPATH/webui_config.json << EOF
+cat > $MODPATH/config.json << EOF
 {
     "moduleEnabled": true,
     "virtualMode": true,
+    "mediaType": "video",
     "videoPath": "",
+    "photoPath": "",
     "videoQuality": "1080p",
+    "photoResolution": "1080p",
     "loopVideo": true,
     "detectionBypass": true,
     "debugLogging": false,
-    "hookMethod": "camera2ndk",
-    "selectedApps": []
+    "hookMethod": "camera2ndk"
 }
 EOF
 
@@ -75,7 +77,7 @@ mkdir -p /sdcard/MagicCam
 set_perm_recursive /sdcard/MagicCam 0 0 0755 0644
 
 ui_print "- Magic Cam module installed successfully"
-ui_print "- WebUI available at: http://localhost:8080"
+ui_print "- WebUI available in KernelSU/Magisk Manager"
 ui_print "- Reboot to activate the module"
-ui_print "- Access WebUI through KernelSU/Magisk Manager"
+ui_print "- Place video/photo files in /sdcard/MagicCam/"
 ui_print "- No additional configuration required"

@@ -6,3 +6,4 @@ author=Magic Cam Team
 description=Virtual Camera Module for Android using Zygisk framework. Supports Android 10+ with multi-architecture compatibility.
 minApi=29
 maxApi=34
+webui=true

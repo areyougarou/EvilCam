@@ -1,6 +1,0 @@
-id=com_twj_mc_webui
-name=Magic Cam WebUI
-author=Magic Cam Team
-version=v1.0.0
-description=Web interface for Magic Cam virtual camera module
-updateJson=https://raw.githubusercontent.com/YOUR_USERNAME/magic-cam/main/webui/update.json
