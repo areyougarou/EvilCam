@@ -10,6 +10,7 @@
 #define LOG_TAG "MagicCam_Hook"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 namespace magiccam {
@@ -18,7 +19,7 @@ namespace magiccam {
 typedef ACameraManager* (*ACameraManager_create_t)();
 typedef void (*ACameraManager_delete_t)(ACameraManager*);
 typedef camera_status_t (*ACameraManager_getCameraIdList_t)(ACameraManager*, ACameraIdList**);
-typedef camera_status_t (*ACameraManager_openCamera_t)(ACameraManager*, const char*, ACameraDevice_Callback*, ACameraDevice**);
+typedef camera_status_t (*ACameraManager_openCamera_t)(ACameraManager*, const char*, ACameraDevice_StateCallback*, ACameraDevice**);
 
 // Original function pointers
 static ACameraManager_create_t original_ACameraManager_create = nullptr;
@@ -97,7 +98,7 @@ camera_status_t hooked_ACameraManager_getCameraIdList(ACameraManager* manager, A
     return result;
 }
 
-camera_status_t hooked_ACameraManager_openCamera(ACameraManager* manager, const char* cameraId, ACameraDevice_Callback* callback, ACameraDevice** device) {
+camera_status_t hooked_ACameraManager_openCamera(ACameraManager* manager, const char* cameraId, ACameraDevice_StateCallback* callback, ACameraDevice** device) {
     LOGD("ACameraManager_openCamera intercepted for camera: %s", cameraId);
     
     if (g_virtualMode) {

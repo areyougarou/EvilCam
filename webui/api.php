@@ -32,7 +32,7 @@ switch (true) {
         break;
         
     case preg_match('/\/api\/upload$/', $request_uri) && $method === 'POST':
-        uploadVideo();
+        uploadMedia();
         break;
         
     case preg_match('/\/api\/status$/', $request_uri) && $method === 'GET':
@@ -102,7 +102,7 @@ function getInstalledApps() {
 }
 
 function loadConfig() {
-    $configFile = '/data/adb/modules/com_twj_mc/webui_config.json';
+    $configFile = '/data/adb/modules/twj_mc/webui_config.json';
     
     if (file_exists($configFile)) {
         $config = json_decode(file_get_contents($configFile), true);
@@ -112,8 +112,13 @@ function loadConfig() {
         echo json_encode([
             'moduleEnabled' => true,
             'virtualMode' => true,
+            'mediaType' => 'video',
             'videoPath' => '',
+            'photoPath' => '',
             'videoQuality' => '1080p',
+            'photoResolution' => '1080p',
+            'aspectRatio' => '16:9',
+            'photoEffects' => 'none',
             'loopVideo' => true,
             'detectionBypass' => true,
             'debugLogging' => false,
@@ -131,7 +136,7 @@ function saveConfig() {
             throw new Exception('Invalid JSON input');
         }
         
-        $configFile = '/data/adb/modules/com_twj_mc/webui_config.json';
+        $configFile = '/data/adb/modules/twj_mc/webui_config.json';
         $configDir = dirname($configFile);
         
         if (!is_dir($configDir)) {
@@ -153,23 +158,38 @@ function saveConfig() {
     }
 }
 
-function uploadVideo() {
+function uploadMedia() {
     try {
-        if (!isset($_FILES['video'])) {
-            throw new Exception('No video file uploaded');
+        $uploadedFile = null;
+        $fileType = null;
+        
+        // Check for video upload
+        if (isset($_FILES['video'])) {
+            $uploadedFile = $_FILES['video'];
+            $fileType = 'video';
+            $allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/mkv', 'video/webm'];
+        }
+        // Check for photo upload
+        elseif (isset($_FILES['photo'])) {
+            $uploadedFile = $_FILES['photo'];
+            $fileType = 'photo';
+            $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+        }
+        else {
+            throw new Exception('No media file uploaded');
         }
         
-        $file = $_FILES['video'];
-        
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            throw new Exception('Upload error: ' . $file['error']);
+        if ($uploadedFile['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception('Upload error: ' . $uploadedFile['error']);
         }
         
         // Validate file type
-        $allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/mkv'];
-        if (!in_array($file['type'], $allowedTypes)) {
-            throw new Exception('Invalid file type. Only MP4, AVI, MOV, and MKV are supported.');
+        if (!in_array($uploadedFile['type'], $allowedTypes)) {
+            $supportedFormats = $fileType === 'video' ? 'MP4, AVI, MOV, MKV, WebM' : 'JPEG, PNG, GIF, BMP, WebP';
+            throw new Exception("Invalid file type. Only $supportedFormats are supported.");
         }
+        
+        // NO SIZE LIMITS - Accept any file size
         
         // Create MagicCam directory
         $uploadDir = '/sdcard/MagicCam';
@@ -177,20 +197,28 @@ function uploadVideo() {
             mkdir($uploadDir, 0755, true);
         }
         
-        $fileName = basename($file['name']);
+        // Generate unique filename to avoid conflicts
+        $fileName = time() . '_' . basename($uploadedFile['name']);
         $uploadPath = $uploadDir . '/' . $fileName;
         
-        if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
+        if (!move_uploaded_file($uploadedFile['tmp_name'], $uploadPath)) {
             throw new Exception('Failed to move uploaded file');
         }
         
         // Set proper permissions
         chmod($uploadPath, 0644);
         
+        // For photos, create thumbnail
+        if ($fileType === 'photo') {
+            createThumbnail($uploadPath, $uploadDir . '/thumb_' . $fileName);
+        }
+        
         echo json_encode([
             'success' => true,
             'path' => $uploadPath,
-            'filename' => $fileName
+            'filename' => $fileName,
+            'type' => $fileType,
+            'size' => $uploadedFile['size']
         ]);
         
     } catch (Exception $e) {
@@ -199,24 +227,82 @@ function uploadVideo() {
     }
 }
 
+function createThumbnail($sourcePath, $thumbPath) {
+    try {
+        $imageInfo = getimagesize($sourcePath);
+        if (!$imageInfo) return false;
+        
+        $sourceWidth = $imageInfo[0];
+        $sourceHeight = $imageInfo[1];
+        $mimeType = $imageInfo['mime'];
+        
+        // Create source image resource
+        switch ($mimeType) {
+            case 'image/jpeg':
+                $sourceImage = imagecreatefromjpeg($sourcePath);
+                break;
+            case 'image/png':
+                $sourceImage = imagecreatefrompng($sourcePath);
+                break;
+            case 'image/gif':
+                $sourceImage = imagecreatefromgif($sourcePath);
+                break;
+            default:
+                return false;
+        }
+        
+        if (!$sourceImage) return false;
+        
+        // Calculate thumbnail dimensions (max 200x200)
+        $maxSize = 200;
+        if ($sourceWidth > $sourceHeight) {
+            $thumbWidth = $maxSize;
+            $thumbHeight = intval($sourceHeight * $maxSize / $sourceWidth);
+        } else {
+            $thumbHeight = $maxSize;
+            $thumbWidth = intval($sourceWidth * $maxSize / $sourceHeight);
+        }
+        
+        // Create thumbnail
+        $thumbImage = imagecreatetruecolor($thumbWidth, $thumbHeight);
+        imagecopyresampled($thumbImage, $sourceImage, 0, 0, 0, 0, $thumbWidth, $thumbHeight, $sourceWidth, $sourceHeight);
+        
+        // Save thumbnail
+        imagejpeg($thumbImage, $thumbPath, 80);
+        
+        // Clean up
+        imagedestroy($sourceImage);
+        imagedestroy($thumbImage);
+        
+        return true;
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
 function getModuleStatus() {
     try {
         // Check if module is loaded
-        $moduleLoaded = file_exists('/data/adb/modules/com_twj_mc/module.prop');
+        $moduleLoaded = file_exists('/data/adb/modules/twj_mc/module.prop');
         
         // Check if Zygisk is enabled
         $zygiskEnabled = file_exists('/data/adb/magisk/zygisk') || 
                         shell_exec('magisk --sqlite "SELECT value FROM settings WHERE key=\'zygisk\'"') === '1';
         
         // Get current configuration
-        $config = json_decode(file_get_contents('/data/adb/modules/com_twj_mc/webui_config.json') ?: '{}', true);
+        $configFile = '/data/adb/modules/twj_mc/webui_config.json';
+        $config = [];
+        if (file_exists($configFile)) {
+            $config = json_decode(file_get_contents($configFile), true) ?: [];
+        }
         
         echo json_encode([
             'enabled' => $moduleLoaded && $zygiskEnabled,
             'virtualMode' => $config['virtualMode'] ?? true,
             'moduleLoaded' => $moduleLoaded,
             'zygiskEnabled' => $zygiskEnabled,
-            'hookedApps' => count($config['selectedApps'] ?? [])
+            'hookedApps' => count($config['selectedApps'] ?? []),
+            'mediaType' => $config['mediaType'] ?? 'video'
         ]);
         
     } catch (Exception $e) {
@@ -230,7 +316,7 @@ function toggleModule() {
         $input = json_decode(file_get_contents('php://input'), true);
         $enabled = $input['enabled'] ?? false;
         
-        $moduleDir = '/data/adb/modules/com_twj_mc';
+        $moduleDir = '/data/adb/modules/twj_mc';
         $disableFile = $moduleDir . '/disable';
         
         if ($enabled) {
@@ -253,7 +339,7 @@ function toggleModule() {
 
 function applyConfiguration($config) {
     // Write configuration to module files
-    $moduleDir = '/data/adb/modules/com_twj_mc';
+    $moduleDir = '/data/adb/modules/twj_mc';
     
     // Create target apps list
     $targetAppsFile = $moduleDir . '/target_apps.txt';
@@ -265,8 +351,13 @@ function applyConfiguration($config) {
     $settingsFile = $moduleDir . '/settings.conf';
     $settings = [
         'virtual_mode=' . ($config['virtualMode'] ? '1' : '0'),
+        'media_type=' . ($config['mediaType'] ?: 'video'),
         'video_path=' . ($config['videoPath'] ?: ''),
+        'photo_path=' . ($config['photoPath'] ?: ''),
         'video_quality=' . ($config['videoQuality'] ?: '1080p'),
+        'photo_resolution=' . ($config['photoResolution'] ?: '1080p'),
+        'aspect_ratio=' . ($config['aspectRatio'] ?: '16:9'),
+        'photo_effects=' . ($config['photoEffects'] ?: 'none'),
         'loop_video=' . ($config['loopVideo'] ? '1' : '0'),
         'detection_bypass=' . ($config['detectionBypass'] ? '1' : '0'),
         'debug_logging=' . ($config['debugLogging'] ? '1' : '0'),
@@ -276,7 +367,9 @@ function applyConfiguration($config) {
     file_put_contents($settingsFile, implode("\n", $settings));
     
     // Set proper permissions
-    chmod($targetAppsFile, 0644);
+    if (file_exists($targetAppsFile)) {
+        chmod($targetAppsFile, 0644);
+    }
     chmod($settingsFile, 0644);
 }
 ?>

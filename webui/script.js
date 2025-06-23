@@ -16,6 +16,14 @@ const WEBUI_API = {
             body: formData
         });
     },
+    uploadPhoto: (file) => {
+        const formData = new FormData();
+        formData.append('photo', file);
+        return fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+    },
     getModuleStatus: () => fetch('/api/status').then(r => r.json()),
     toggleModule: (enabled) => fetch('/api/toggle', {
         method: 'POST',
@@ -30,11 +38,17 @@ let appState = {
     selectedApps: new Set(),
     currentCategory: 'all',
     searchQuery: '',
+    mediaType: 'video', // 'video' or 'photo'
     config: {
         moduleEnabled: true,
         virtualMode: true,
+        mediaType: 'video',
         videoPath: '',
+        photoPath: '',
         videoQuality: '1080p',
+        photoResolution: '1080p',
+        aspectRatio: '16:9',
+        photoEffects: 'none',
         loopVideo: true,
         detectionBypass: true,
         debugLogging: false,
@@ -234,16 +248,35 @@ function setupEventListeners() {
         updateHookedCount();
     });
     
+    // Media type selection
+    document.querySelectorAll('.media-type-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.media-type-btn').forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            
+            const mediaType = e.currentTarget.dataset.type;
+            appState.mediaType = mediaType;
+            appState.config.mediaType = mediaType;
+            
+            // Show/hide appropriate settings
+            document.getElementById('videoSettings').classList.toggle('hidden', mediaType !== 'video');
+            document.getElementById('photoSettings').classList.toggle('hidden', mediaType !== 'photo');
+            
+            updateMediaPreview();
+        });
+    });
+    
     // Video file selection
     document.getElementById('videoFile').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
-            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('videoFileName').textContent = file.name;
             
             try {
                 showMessage('Uploading video file...', 'info');
                 await WEBUI_API.uploadVideo(file);
                 appState.config.videoPath = `/sdcard/MagicCam/${file.name}`;
+                updateMediaPreview(file, 'video');
                 showMessage('Video uploaded successfully!', 'success');
             } catch (error) {
                 console.error('Failed to upload video:', error);
@@ -252,9 +285,40 @@ function setupEventListeners() {
         }
     });
     
+    // Photo file selection
+    document.getElementById('photoFile').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('photoFileName').textContent = file.name;
+            
+            try {
+                showMessage('Uploading photo file...', 'info');
+                await WEBUI_API.uploadPhoto(file);
+                appState.config.photoPath = `/sdcard/MagicCam/${file.name}`;
+                updateMediaPreview(file, 'photo');
+                showMessage('Photo uploaded successfully!', 'success');
+            } catch (error) {
+                console.error('Failed to upload photo:', error);
+                showMessage('Failed to upload photo file', 'error');
+            }
+        }
+    });
+    
     // Settings
     document.getElementById('videoQuality').addEventListener('change', (e) => {
         appState.config.videoQuality = e.target.value;
+    });
+    
+    document.getElementById('photoResolution').addEventListener('change', (e) => {
+        appState.config.photoResolution = e.target.value;
+    });
+    
+    document.getElementById('aspectRatio').addEventListener('change', (e) => {
+        appState.config.aspectRatio = e.target.value;
+    });
+    
+    document.getElementById('photoEffects').addEventListener('change', (e) => {
+        appState.config.photoEffects = e.target.value;
     });
     
     document.getElementById('loopVideo').addEventListener('change', (e) => {
@@ -277,6 +341,32 @@ function setupEventListeners() {
     document.getElementById('saveSettings').addEventListener('click', saveConfiguration);
     document.getElementById('resetSettings').addEventListener('click', resetConfiguration);
     document.getElementById('exportConfig').addEventListener('click', exportConfiguration);
+}
+
+function updateMediaPreview(file = null, type = null) {
+    const preview = document.getElementById('mediaPreview');
+    
+    if (file && type) {
+        const url = URL.createObjectURL(file);
+        
+        if (type === 'video') {
+            preview.innerHTML = `<video src="${url}" controls muted></video>`;
+        } else if (type === 'photo') {
+            preview.innerHTML = `<img src="${url}" alt="Photo preview">`;
+        }
+    } else {
+        // Show placeholder based on current media type
+        const mediaType = appState.mediaType;
+        const icon = mediaType === 'video' ? '🎥' : '📷';
+        const text = mediaType === 'video' ? 'No video selected' : 'No photo selected';
+        
+        preview.innerHTML = `
+            <div class="preview-placeholder">
+                <span class="preview-icon">${icon}</span>
+                <p>${text}</p>
+            </div>
+        `;
+    }
 }
 
 function getFilteredApps() {
@@ -398,10 +488,25 @@ async function loadConfiguration() {
         // Update UI with loaded config
         document.getElementById('moduleEnabled').checked = appState.config.moduleEnabled;
         document.getElementById('videoQuality').value = appState.config.videoQuality;
+        document.getElementById('photoResolution').value = appState.config.photoResolution || '1080p';
+        document.getElementById('aspectRatio').value = appState.config.aspectRatio || '16:9';
+        document.getElementById('photoEffects').value = appState.config.photoEffects || 'none';
         document.getElementById('loopVideo').checked = appState.config.loopVideo;
         document.getElementById('detectionBypass').checked = appState.config.detectionBypass;
         document.getElementById('debugLogging').checked = appState.config.debugLogging;
         document.getElementById('hookMethod').value = appState.config.hookMethod;
+        
+        // Set media type
+        if (appState.config.mediaType) {
+            appState.mediaType = appState.config.mediaType;
+            document.querySelectorAll('.media-type-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === appState.mediaType);
+            });
+            
+            // Show appropriate settings
+            document.getElementById('videoSettings').classList.toggle('hidden', appState.mediaType !== 'video');
+            document.getElementById('photoSettings').classList.toggle('hidden', appState.mediaType !== 'photo');
+        }
         
         // Load selected apps
         if (config.selectedApps) {
@@ -410,11 +515,18 @@ async function loadConfiguration() {
             updateHookedCount();
         }
         
-        // Update file name if video is set
+        // Update file names if media is set
         if (appState.config.videoPath) {
             const fileName = appState.config.videoPath.split('/').pop();
-            document.getElementById('fileName').textContent = fileName;
+            document.getElementById('videoFileName').textContent = fileName;
         }
+        
+        if (appState.config.photoPath) {
+            const fileName = appState.config.photoPath.split('/').pop();
+            document.getElementById('photoFileName').textContent = fileName;
+        }
+        
+        updateMediaPreview();
         
     } catch (error) {
         console.error('Failed to load configuration:', error);
@@ -443,8 +555,13 @@ function resetConfiguration() {
         appState.config = {
             moduleEnabled: true,
             virtualMode: true,
+            mediaType: 'video',
             videoPath: '',
+            photoPath: '',
             videoQuality: '1080p',
+            photoResolution: '1080p',
+            aspectRatio: '16:9',
+            photoEffects: 'none',
             loopVideo: true,
             detectionBypass: true,
             debugLogging: false,
@@ -452,18 +569,31 @@ function resetConfiguration() {
         };
         
         appState.selectedApps.clear();
+        appState.mediaType = 'video';
         
         // Update UI
         document.getElementById('moduleEnabled').checked = true;
         document.getElementById('videoQuality').value = '1080p';
+        document.getElementById('photoResolution').value = '1080p';
+        document.getElementById('aspectRatio').value = '16:9';
+        document.getElementById('photoEffects').value = 'none';
         document.getElementById('loopVideo').checked = true;
         document.getElementById('detectionBypass').checked = true;
         document.getElementById('debugLogging').checked = false;
         document.getElementById('hookMethod').value = 'camera2ndk';
-        document.getElementById('fileName').textContent = 'No file selected';
+        document.getElementById('videoFileName').textContent = 'No video selected';
+        document.getElementById('photoFileName').textContent = 'No photo selected';
+        
+        // Reset media type selector
+        document.querySelectorAll('.media-type-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === 'video');
+        });
+        document.getElementById('videoSettings').classList.remove('hidden');
+        document.getElementById('photoSettings').classList.add('hidden');
         
         renderAppList();
         updateHookedCount();
+        updateMediaPreview();
         
         showMessage('Configuration reset to defaults', 'success');
     }
@@ -511,6 +641,7 @@ function showMessage(text, type = 'info') {
 
 function updateUI() {
     updateHookedCount();
+    updateMediaPreview();
     
     // Update select all button text
     const selectAllBtn = document.getElementById('selectAllBtn');
@@ -518,66 +649,3 @@ function updateUI() {
     const allSelected = visibleApps.length > 0 && visibleApps.every(app => appState.selectedApps.has(app.package));
     selectAllBtn.textContent = allSelected ? 'Deselect All' : 'Select All';
 }
-
-// Add CSS for error states
-const additionalCSS = `
-.error-state {
-    text-align: center;
-    padding: 40px 20px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 2px dashed var(--error-color);
-    border-radius: var(--radius);
-    color: var(--error-color);
-}
-
-.error-state h3 {
-    margin-bottom: 16px;
-    font-size: 18px;
-}
-
-.error-state p {
-    margin-bottom: 8px;
-    color: var(--text-muted);
-}
-
-.no-apps {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-muted);
-}
-
-.camera-badge, .system-badge {
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: 500;
-    text-transform: uppercase;
-}
-
-.camera-badge {
-    background: var(--success-color);
-    color: white;
-}
-
-.system-badge {
-    background: var(--primary-color);
-    color: white;
-}
-
-.message-info {
-    background: rgba(99, 102, 241, 0.1);
-    color: var(--primary-color);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-}
-
-.message-warning {
-    background: rgba(245, 158, 11, 0.1);
-    color: var(--warning-color);
-    border: 1px solid rgba(245, 158, 11, 0.2);
-}
-`;
-
-// Inject additional CSS
-const style = document.createElement('style');
-style.textContent = additionalCSS;
-document.head.appendChild(style);
