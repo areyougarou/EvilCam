@@ -35,14 +35,15 @@ jobs:
         ./build.sh
     
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: MagicCam-Module
         path: MagicCam-v1.0.0.zip
+        retention-days: 30
     
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/v')
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: MagicCam-v1.0.0.zip
         draft: false
