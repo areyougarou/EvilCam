@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Cam - Virtual Camera Module</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">📹</div>
+                    <h1>Magic Cam</h1>
+                </div>
+                <div class="status-indicator" id="statusIndicator">
+                    <div class="status-dot"></div>
+                    <span>Module Active</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Module Status Card -->
+            <div class="card status-card">
+                <div class="card-header">
+                    <h2>Module Status</h2>
+                    <div class="toggle-switch" id="moduleToggle">
+                        <input type="checkbox" id="moduleEnabled" checked>
+                        <label for="moduleEnabled"></label>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="status-label">Version</span>
+                            <span class="status-value">v1.0.0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Framework</span>
+                            <span class="status-value">Zygisk</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Hooked Apps</span>
+                            <span class="status-value" id="hookedCount">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Virtual Mode</span>
+                            <span class="status-value status-active" id="virtualStatus">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- App Selection Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Target Applications</h2>
+                    <button class="btn btn-secondary" id="selectAllBtn">Select All</button>
+                </div>
+                <div class="card-content">
+                    <div class="search-box">
+                        <input type="text" id="appSearch" placeholder="Search applications..." class="search-input">
+                        <div class="search-icon">🔍</div>
+                    </div>
+                    
+                    <div class="app-categories">
+                        <div class="category-tabs">
+                            <button class="tab-btn active" data-category="all">All Apps</button>
+                            <button class="tab-btn" data-category="camera">Camera</button>
+                            <button class="tab-btn" data-category="social">Social Media</button>
+                            <button class="tab-btn" data-category="communication">Communication</button>
+                            <button class="tab-btn" data-category="streaming">Streaming</button>
+                        </div>
+                        
+                        <div class="app-list" id="appList">
+                            <!-- Apps will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Virtual Video Settings Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Virtual Video Settings</h2>
+                </div>
+                <div class="card-content">
+                    <div class="setting-group">
+                        <label class="setting-label">Video Source</label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="videoFile" accept="video/*" class="file-input">
+                            <button class="btn btn-outline" onclick="document.getElementById('videoFile').click()">
+                                Choose Video File
+                            </button>
+                            <span class="file-name" id="fileName">No file selected</span>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label class="setting-label">Video Quality</label>
+                        <select class="select-input" id="videoQuality">
+                            <option value="720p">720p (HD)</option>
+                            <option value="1080p" selected>1080p (Full HD)</option>
+                            <option value="1440p">1440p (2K)</option>
+                            <option value="2160p">2160p (4K)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label class="setting-label">Loop Video</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="loopVideo" checked>
+                            <label for="loopVideo"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Settings Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Advanced Settings</h2>
+                </div>
+                <div class="card-content">
+                    <div class="setting-group">
+                        <label class="setting-label">Detection Bypass</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="detectionBypass" checked>
+                            <label for="detectionBypass"></label>
+                        </div>
+                        <p class="setting-description">Enable basic obfuscation to avoid detection</p>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label class="setting-label">Debug Logging</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="debugLogging">
+                            <label for="debugLogging"></label>
+                        </div>
+                        <p class="setting-description">Enable detailed logging for troubleshooting</p>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label class="setting-label">Hook Method</label>
+                        <select class="select-input" id="hookMethod">
+                            <option value="camera2ndk" selected>Camera2 NDK</option>
+                            <option value="hal">Camera HAL</option>
+                            <option value="both">Both Methods</option>
+                        </select>
+                        <p class="setting-description">Choose the camera hooking method</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="saveSettings">Save Settings</button>
+                <button class="btn btn-secondary" id="resetSettings">Reset to Default</button>
+                <button class="btn btn-outline" id="exportConfig">Export Config</button>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 Magic Cam. Built with WebUI X for KernelSU/Magisk.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

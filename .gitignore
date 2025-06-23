@@ -1,0 +1,25 @@
+# Build directories
+build/
+lib/
+*.zip
+
+# NDK
+obj/
+libs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
