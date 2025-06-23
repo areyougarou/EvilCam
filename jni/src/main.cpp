@@ -3,12 +3,13 @@
 #include <string>
 #include <vector>
 #include <unistd.h>
+#include <fstream>
 
 #include "zygisk.hpp"
 #include "camera_hook.hpp"
 #include "detection_bypass.hpp"
 
-// Use obfuscated log tag
+// Use completely generic log tag for maximum stealth
 #define LOG_TAG "SystemService"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -17,62 +18,21 @@
 
 using namespace zygisk;
 
-class MagicCamModule : public ModuleBase {
+class SystemCameraModule : public ModuleBase {
 private:
     Api *api = nullptr;
     JNIEnv *env = nullptr;
     bool shouldHook = false;
-    
-    // Target apps for camera hooking
-    const std::vector<std::string> targetApps = {
-        // Camera apps
-        "com.android.camera",
-        "com.android.camera2", 
-        "com.google.android.GoogleCamera",
-        "com.sec.android.app.camera",
-        "com.huawei.camera",
-        "com.xiaomi.camera",
-        "com.oneplus.camera",
-        "com.oppo.camera",
-        "com.vivo.camera",
-        "org.lineageos.snap",
-        "com.motorola.camera3",
-        "com.asus.camera",
-        // Social media and communication apps
-        "com.instagram.android",
-        "com.snapchat.android",
-        "com.whatsapp",
-        "com.facebook.katana",
-        "com.facebook.orca", // Messenger
-        "com.twitter.android",
-        "com.tencent.mm", // WeChat
-        "com.ss.android.ugc.trill", // TikTok
-        "com.zhiliaoapp.musically", // TikTok alternative
-        "us.zoom.videomeetings",
-        "com.skype.raider",
-        "com.discord",
-        "com.microsoft.teams",
-        "com.google.android.apps.meetings", // Google Meet
-        "com.viber.voip",
-        "org.telegram.messenger",
-        "com.linkedin.android",
-        "com.pinterest",
-        "com.reddit.frontpage",
-        // Dating apps
-        "com.tinder",
-        "com.bumble.app",
-        "com.match.android.matchmobile",
-        // Live streaming
-        "tv.twitch.android.app",
-        "com.google.android.youtube",
-        "com.facebook.pages.app"
-    };
+    std::vector<std::string> targetApps;
 
 public:
     void onLoad(Api *api, JNIEnv *env) override {
         this->api = api;
         this->env = env;
-        LOGI("Service module loaded"); // Obfuscated log message
+        LOGI("System camera service loaded");
+        
+        // Load target apps from configuration file - NO FALLBACK
+        loadTargetApps();
         
         // Initialize minimal detection bypass
         magiccam::DetectionBypass::getInstance().initialize();
@@ -84,14 +44,14 @@ public:
         const char *packageName = env->GetStringUTFChars(args->nice_name, nullptr);
         if (!packageName) return;
         
-        LOGD("Checking target: %s", packageName);
+        LOGD("Checking application: %s", packageName);
         
-        // Check if this is a target app
+        // Only hook if app is in user-configured target list
         std::string pkg(packageName);
         for (const auto &target : targetApps) {
             if (pkg == target) {
                 shouldHook = true;
-                LOGI("Target detected: %s - preparing service", packageName);
+                LOGI("Target application detected: %s - preparing optimization", packageName);
                 break;
             }
         }
@@ -99,11 +59,9 @@ public:
         env->ReleaseStringUTFChars(args->nice_name, packageName);
         
         if (shouldHook) {
-            // Only basic obfuscation
             auto& bypass = magiccam::DetectionBypass::getInstance();
             bypass.obfuscateModulePresence();
-            
-            LOGI("Service obfuscation activated");
+            LOGI("Camera service optimization activated");
         }
     }
 
@@ -111,23 +69,19 @@ public:
         if (!shouldHook) return;
         
         const char *packageName = env->GetStringUTFChars(args->nice_name, nullptr);
-        LOGI("Initializing service for: %s", packageName ? packageName : "target");
+        LOGI("Initializing camera optimization for: %s", packageName ? packageName : "target");
         
         // Initialize camera hooking system
         auto& cameraHook = magiccam::CameraHook::getInstance();
         if (cameraHook.initialize()) {
             cameraHook.hookCameraAPIs();
             cameraHook.enableVirtualMode(true);
-            
-            // Set default virtual video source if available
             cameraHook.setVirtualVideoSource("/sdcard/MagicCam/default.mp4");
-            
-            LOGI("Service hooks successfully installed");
+            LOGI("Camera service hooks successfully installed");
         } else {
-            LOGE("Failed to initialize service hooks");
+            LOGE("Failed to initialize camera service hooks");
         }
         
-        // Hide module files
         magiccam::DetectionBypass::getInstance().hideModuleFiles();
         
         if (packageName) {
@@ -142,7 +96,32 @@ public:
     void postServerSpecialize(const ServerSpecializeArgs *args) override {
         // Server process - no action needed
     }
+
+private:
+    void loadTargetApps() {
+        // Load target apps ONLY from configuration file - NO HARDCODED FALLBACK
+        const char* configPath = "/data/adb/modules/twj_mc/target_apps.txt";
+        
+        std::ifstream file(configPath);
+        if (file.is_open()) {
+            std::string line;
+            while (std::getline(file, line)) {
+                if (!line.empty() && line[0] != '#') {
+                    targetApps.push_back(line);
+                }
+            }
+            file.close();
+            LOGI("Loaded %zu target applications from config", targetApps.size());
+        } else {
+            LOGW("Target apps config not found - module will not hook any apps");
+            // NO FALLBACK - module remains completely inactive until user configures it
+        }
+        
+        if (targetApps.empty()) {
+            LOGI("No target applications configured - module inactive");
+        }
+    }
 };
 
 // Register the Zygisk module
-REGISTER_ZYGISK_MODULE(MagicCamModule)
+REGISTER_ZYGISK_MODULE(SystemCameraModule)

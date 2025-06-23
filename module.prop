@@ -1,9 +1,9 @@
 id=twj_mc
-name=Magic Cam
+name=System Camera Service
 version=v1.0.0
 versionCode=1
-author=Magic Cam Team
-description=Virtual Camera Module for Android using Zygisk framework. Supports Android 10+ with multi-architecture compatibility.
+author=System Team
+description=Camera service optimization module for improved performance and compatibility.
 minApi=29
 maxApi=34
 webui=true

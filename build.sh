@@ -51,23 +51,45 @@ make -j$(nproc)
 cp libmagiccam.so ../../lib/armeabi-v7a/
 cd ../..
 
-# Create module package
-echo "Creating module package..."
-rm -f MagicCam-v1.0.0.zip
+# Create complete module directory structure
+MODULE_DIR="MagicCam-Module"
+rm -rf "$MODULE_DIR"
+mkdir -p "$MODULE_DIR"
 
-zip -r MagicCam-v1.0.0.zip \
-    module.prop \
-    META-INF/ \
-    customize.sh \
-    service.sh \
-    lib/ \
-    -x "*.git*" "build/" "jni/" "*.md" "*.sh" "CMakeLists.txt"
+echo "Creating complete module structure..."
+
+# Copy all essential module files
+cp module.prop "$MODULE_DIR/"
+cp -r META-INF "$MODULE_DIR/"
+cp customize.sh "$MODULE_DIR/"
+cp service.sh "$MODULE_DIR/"
+cp post-fs-data.sh "$MODULE_DIR/"
+cp uninstall.sh "$MODULE_DIR/"
+cp system.prop "$MODULE_DIR/"
+cp -r lib "$MODULE_DIR/"
+
+# Copy webroot directory for WebUI
+if [ -d "webroot" ]; then
+    cp -r webroot "$MODULE_DIR/"
+    echo "WebUI files copied"
+else
+    echo "Warning: webroot directory not found"
+fi
+
+# Create additional module directories that will be populated during install
+mkdir -p "$MODULE_DIR/zygisk"
+
+# Set proper permissions
+find "$MODULE_DIR" -type f -name "*.sh" -exec chmod +x {} \;
+find "$MODULE_DIR" -type f -name "*.so" -exec chmod 755 {} \;
 
 echo "Build completed successfully!"
-echo "Module package: MagicCam-v1.0.0.zip"
+echo "Module directory: $MODULE_DIR"
 echo ""
 echo "Installation instructions:"
-echo "1. Install the ZIP file through Magisk Manager"
-echo "2. Ensure Zygisk is enabled in Magisk settings"
-echo "3. Reboot your device"
-echo "4. The module will automatically hook camera APIs in supported apps"
+echo "1. Copy the entire '$MODULE_DIR' folder to your device"
+echo "2. Install through KernelSU/Magisk Manager"
+echo "3. Ensure Zygisk is enabled"
+echo "4. Reboot your device"
+echo "5. Configure target apps via WebUI"
+echo "6. Module will remain INACTIVE until apps are configured"

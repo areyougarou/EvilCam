@@ -1,10 +1,10 @@
 #!/system/bin/sh
 
-# Magic Cam Module Installation Script
+# System Camera Service Installation Script
 
-ui_print "- Installing Magic Cam Virtual Camera Module"
+ui_print "- Installing System Camera Service Module"
 ui_print "- Version: 1.0.0"
-ui_print "- Author: Magic Cam Team"
+ui_print "- Author: System Team"
 
 # Check if Zygisk is enabled
 if [ ! -f /data/adb/magisk/zygisk ]; then
@@ -41,7 +41,7 @@ esac
 
 # Create module directories
 mkdir -p $MODPATH/zygisk
-mkdir -p $MODPATH/webui
+mkdir -p $MODPATH/webroot
 
 # Copy native libraries based on architecture
 if [ "$ABI" = "arm64-v8a" ]; then
@@ -53,9 +53,9 @@ fi
 # Set permissions
 set_perm_recursive $MODPATH 0 0 0755 0644
 set_perm $MODPATH/zygisk/libmagiccam.so 0 0 0755
-set_perm_recursive $MODPATH/webui 0 0 0755 0644
+set_perm_recursive $MODPATH/webroot 0 0 0755 0644
 
-# Create default configuration
+# Create default configuration with NO apps
 cat > $MODPATH/config.json << EOF
 {
     "moduleEnabled": true,
@@ -65,6 +65,8 @@ cat > $MODPATH/config.json << EOF
     "photoPath": "",
     "videoQuality": "1080p",
     "photoResolution": "1080p",
+    "aspectRatio": "16:9",
+    "photoEffects": "none",
     "loopVideo": true,
     "detectionBypass": true,
     "debugLogging": false,
@@ -72,12 +74,29 @@ cat > $MODPATH/config.json << EOF
 }
 EOF
 
+# Create EMPTY target apps file - user MUST configure via WebUI
+cat > $MODPATH/target_apps.txt << EOF
+# Target Applications for Camera Optimization
+# Add package names one per line
+# Lines starting with # are comments
+# 
+# Module will NOT hook any apps until configured via WebUI
+# 
+# Examples (remove # to enable):
+# com.android.camera
+# com.android.camera2
+# com.instagram.android
+# com.whatsapp
+# us.zoom.videomeetings
+EOF
+
 # Create MagicCam directory for videos
 mkdir -p /sdcard/MagicCam
 set_perm_recursive /sdcard/MagicCam 0 0 0755 0644
 
-ui_print "- Magic Cam module installed successfully"
+ui_print "- System Camera Service installed successfully"
 ui_print "- WebUI available in KernelSU/Magisk Manager"
 ui_print "- Reboot to activate the module"
+ui_print "- IMPORTANT: Configure target apps via WebUI"
+ui_print "- Module is INACTIVE until apps are configured"
 ui_print "- Place video/photo files in /sdcard/MagicCam/"
-ui_print "- No additional configuration required"

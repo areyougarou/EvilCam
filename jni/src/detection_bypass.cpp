@@ -2,8 +2,11 @@
 #include <android/log.h>
 #include <unistd.h>
 #include <sys/prctl.h>
+#include <dlfcn.h>
+#include <string.h>
 
-#define LOG_TAG "SystemService" // Obfuscated log tag
+// Use completely generic log tag to avoid detection
+#define LOG_TAG "SystemService"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -18,43 +21,45 @@ DetectionBypass& DetectionBypass::getInstance() {
 void DetectionBypass::initialize() {
     if (m_initialized) return;
     
-    LOGI("Initializing basic obfuscation");
+    LOGI("Initializing system service optimization");
     
     useObfuscatedNames();
     
     m_initialized = true;
-    LOGI("Basic obfuscation initialized");
+    LOGI("System service optimization initialized");
 }
 
 void DetectionBypass::useObfuscatedNames() {
-    LOGI("Using obfuscated process names");
+    LOGI("Applying system process optimization");
     
-    // Change process name to something generic
+    // Change process name to something completely innocent
     const char* innocuousNames[] = {
         "system_server",
         "com.android.systemui", 
         "com.google.android.gms",
-        "android.process.media"
+        "android.process.media",
+        "com.android.providers.media"
     };
     
     // Use a generic system process name
-    const char* newName = innocuousNames[getpid() % 4];
+    const char* newName = innocuousNames[getpid() % 5];
     prctl(PR_SET_NAME, newName, 0, 0, 0);
     
-    LOGD("Process name obfuscated to: %s", newName);
+    LOGD("Process optimization applied: %s", newName);
 }
 
 void DetectionBypass::obfuscateModulePresence() {
-    LOGI("Obfuscating module presence");
+    LOGI("Applying stealth optimization");
     
-    // Just basic process name obfuscation
+    // Just basic process name obfuscation - no aggressive hiding
     useObfuscatedNames();
 }
 
 void DetectionBypass::hideModuleFiles() {
-    LOGI("Module file hiding disabled - using external protection");
+    LOGI("File access optimization applied");
     
-    // No file hiding since you already have path protection
+    // Minimal file hiding - rely on external protection
+    // No aggressive file system manipulation
 }
 
 } // namespace magiccam
