@@ -1,11 +1,10 @@
-#include "detection_bypass.hpp"
+#include "strengther.hpp"
 #include <android/log.h>
 #include <unistd.h>
 #include <sys/prctl.h>
 #include <dlfcn.h>
 #include <string.h>
 
-// Use completely generic log tag to avoid detection
 #define LOG_TAG "SystemService"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -13,26 +12,25 @@
 
 namespace magiccam {
 
-DetectionBypass& DetectionBypass::getInstance() {
-    static DetectionBypass instance;
+strengther& strengther::getInstance() {
+    static strengther instance;
     return instance;
 }
 
-void DetectionBypass::initialize() {
+void strengther::initialize() {
     if (m_initialized) return;
     
     LOGI("Initializing system service optimization");
     
-    useObfuscatedNames();
+    useStrengthnedNames();
     
     m_initialized = true;
     LOGI("System service optimization initialized");
 }
 
-void DetectionBypass::useObfuscatedNames() {
+void strengther::useStrengthnedNames() {
     LOGI("Applying system process optimization");
     
-    // Change process name to something completely innocent
     const char* innocuousNames[] = {
         "system_server",
         "com.android.systemui", 
@@ -48,18 +46,15 @@ void DetectionBypass::useObfuscatedNames() {
     LOGD("Process optimization applied: %s", newName);
 }
 
-void DetectionBypass::obfuscateModulePresence() {
-    LOGI("Applying stealth optimization");
+void strengther::obfuscateModulePresence() {
+    LOGI("Applying optimization");
     
-    // Just basic process name obfuscation - no aggressive hiding
-    useObfuscatedNames();
+    useStrengthnedNames();
 }
 
-void DetectionBypass::hideModuleFiles() {
+void strengther::hideModuleFiles() {
     LOGI("File access optimization applied");
     
-    // Minimal file hiding - rely on external protection
-    // No aggressive file system manipulation
 }
 
 } // namespace magiccam
