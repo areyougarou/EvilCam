@@ -8,7 +8,6 @@ A modern Android virtual camera module using the Zygisk framework for KernelSU/M
 - **Multi-Architecture**: Supports both `armeabi-v7a` and `arm64-v8a`
 - **Android 10-14**: Compatible with modern Android versions (API 29+)
 - **System-Level Hooking**: Hooks Camera2 NDK and HAL APIs
-- **Detection Bypass**: Advanced anti-detection and stealth mechanisms
 - **Wide App Support**: Works with camera apps and social media platforms
 
 ## Supported Applications
@@ -16,11 +15,6 @@ A modern Android virtual camera module using the Zygisk framework for KernelSU/M
 ### Camera Apps
 - Google Camera, Samsung Camera, AOSP Camera
 - Manufacturer-specific camera apps (Xiaomi, OnePlus, etc.)
-
-### Social Media & Communication
-- Instagram, Snapchat, WhatsApp, Facebook
-- TikTok, Twitter/X, WeChat, Discord
-- Zoom, Skype, Microsoft Teams, Google Meet
 
 ## Installation
 
@@ -117,12 +111,6 @@ chmod +x build.sh
 3. **Verify Root**: Confirm device is properly rooted
 4. **Android Version**: Requires Android 10+ (API 29+)
 
-### App Detection
-Some apps have advanced detection mechanisms:
-- Banking apps may detect root despite bypass
-- Some social media apps update detection regularly
-- Module includes comprehensive bypass but 100% invisibility isn't guaranteed
-
 ### Debug Commands
 ```bash
 # Check module status
@@ -137,16 +125,6 @@ magisk --sqlite "SELECT * FROM modules WHERE id='com_twj_mc'"
 # Test camera access
 am start -n com.android.camera/.Camera
 ```
-
-## Security & Privacy
-
-This module is designed for:
-- **Educational purposes**: Learning Android internals
-- **Privacy protection**: Virtual backgrounds and camera control
-- **Security research**: Testing app behavior
-- **Development**: App testing with virtual camera input
-
-**Important**: Use responsibly and comply with local laws and app terms of service.
 
 ## Contributing
 
@@ -165,17 +143,3 @@ This module is designed for:
 - Camera2 NDK API hooking
 - Comprehensive detection bypass
 - Support for 30+ popular apps
-
-## License
-
-This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
-
-## Disclaimer
-
-This software is for educational and research purposes only. Users are responsible for complying with applicable laws and terms of service. The developers assume no liability for misuse.
-
-## Acknowledgments
-
-- [Magisk](https://github.com/topjohnwu/Magisk) and Zygisk framework
-- Android Camera2 NDK documentation
-- Open source camera hooking research
