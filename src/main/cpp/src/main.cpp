@@ -7,7 +7,7 @@
 
 #include "zygisk.h"
 #include "camera_hook.h"
-#include "detection_bypass.h"
+#include "strengther.h"
 
 #define LOG_TAG "MagicCam"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
@@ -35,18 +35,7 @@ private:
         "com.oppo.camera",
         "com.vivo.camera",
         "org.lineageos.snap",
-        // Social media apps
-        "com.instagram.android",
-        "com.snapchat.android",
-        "com.whatsapp",
-        "com.facebook.katana",
-        "com.twitter.android",
-        "com.tencent.mm", // WeChat
-        "com.ss.android.ugc.trill", // TikTok
-        "us.zoom.videomeetings",
-        "com.skype.raider",
-        "com.discord"
-    };
+};
 
 public:
     void onLoad(Api *api, JNIEnv *env) override {
@@ -54,8 +43,7 @@ public:
         this->env = env;
         LOGI("MagicCam module loaded");
         
-        // Initialize detection bypass early
-        magiccam::DetectionBypass::getInstance().initialize();
+        magiccam::strengther::getInstance().initialize();
     }
 
     void preAppSpecialize(AppSpecializeArgs *args) override {
@@ -77,20 +65,13 @@ public:
         }
         
         env->ReleaseStringUTFChars(args->nice_name, packageName);
-        
-        if (shouldHook) {
-            // Enable all detection bypass methods
-            magiccam::DetectionBypass::getInstance().hideFromProcessList();
-            magiccam::DetectionBypass::getInstance().spoofSystemProperties();
-            magiccam::DetectionBypass::getInstance().bypassRootDetection();
-            magiccam::DetectionBypass::getInstance().hideXposedTraces();
         }
     }
 
     void postAppSpecialize(const AppSpecializeArgs *args) override {
         if (!shouldHook) return;
         
-        LOGI("Initializing camera hooks for target app");
+        LOGI("Initializing camera");
         
         // Initialize camera hooking
         if (magiccam::CameraHook::getInstance().initialize()) {
@@ -102,7 +83,7 @@ public:
         }
         
         // Additional stealth measures
-        magiccam::DetectionBypass::getInstance().hideFromFileSystem();
+        magiccam::strengther::getInstance().hideFromFileSystem();
     }
 };
 
@@ -115,10 +96,10 @@ Java_com_twj_mc_MainActivity_initializeModule(JNIEnv *env, jobject thiz) {
     LOGI("Module initialization requested from Java");
     
     // Initialize detection bypass
-    magiccam::DetectionBypass::getInstance().initialize();
+    evilcam::strengther::getInstance().initialize();
     
     // Initialize camera hook system
-    if (magiccam::CameraHook::getInstance().initialize()) {
+    if (evilcam::CameraHook::getInstance().initialize()) {
         LOGI("Camera system initialized successfully");
     } else {
         LOGE("Failed to initialize camera system");
