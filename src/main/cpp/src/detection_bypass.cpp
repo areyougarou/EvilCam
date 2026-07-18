@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#define LOG_TAG "MagicCam_Bypass"
+#define LOG_TAG "EvilCam"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -28,69 +28,13 @@ static __system_property_get_t original___system_property_get = nullptr;
 
 // Paths/strings to hide
 static const char* HIDDEN_PATHS[] = {
-    "/system/xbin/su",
-    "/system/bin/su", 
-    "/system/app/Superuser.apk",
-    "/data/local/xbin/su",
-    "/data/local/bin/su",
-    "/system/sd/xbin/su",
-    "/system/bin/.ext/su",
-    "/system/usr/we-need-root/su-backup",
-    "/system/xbin/daemonsu",
-    "/system/etc/init.d/99SuperSUDaemon",
-    "/dev/com.koushikdutta.superuser.daemon/",
-    "/system/etc/.has_su_daemon",
-    "/system/etc/.installed_su_daemon",
-    "/system/bin/.ext/.su",
-    "/system/etc/.has_su_users",
-    "/system/xbin/sugote",
-    "/vendor/bin/su",
-    "/cache/su",
-    "/data/su",
-    "/dev/su",
-    "/system/bin/failsafe/su",
-    "/system/sd/xbin/su",
-    "/cache/su",
-    "/data/su",
-    "/dev/su",
-    "/system/etc/security/.installed_su_daemon",
-    "/data/adb/magisk",
-    "/sbin/magisk",
-    "/system/addon.d/99-magisk.sh",
-    "/cache/magisk.log",
-    "/data/adb/magisk.img",
-    "/sbin/magiskhide",
-    "/cache/magisk",
-    "/system/xbin/which",
-    "/proc/self/mounts",
-    "/proc/mounts",
-    "/system/app/com.twj.mc",
-    "/data/app/com.twj.mc",
-    "/data/data/com.twj.mc",
-    nullptr
 };
 
 static const char* SPOOF_PROPS[][2] = {
-    {"ro.debuggable", "0"},
-    {"ro.secure", "1"},
-    {"ro.build.type", "user"},
-    {"ro.build.tags", "release-keys"},
-    {"ro.vendor.build.security_patch", "2023-12-01"},
-    {"ro.build.selinux", "1"},
-    {"ro.boot.verifiedbootstate", "green"},
-    {"ro.boot.veritymode", "enforcing"},
-    {"ro.boot.warranty_bit", "0"},
-    {"ro.warranty_bit", "0"},
-    {"ro.debuggable", "0"},
-    {"ro.force.debuggable", "0"},
-    {"ro.kernel.android.checkjni", "0"},
-    {"ro.kernel.checkjni", "0"},
-    {"ro.development_settings.enabled", "0"},
-    {nullptr, nullptr}
 };
 
-DetectionBypass& DetectionBypass::getInstance() {
-    static DetectionBypass instance;
+DetectionBypass& strengther::getInstance() {
+    static strengther instance;
     return instance;
 }
 
@@ -161,14 +105,14 @@ int hooked___system_property_get(const char* name, char* value) {
 void DetectionBypass::initialize() {
     if (m_initialized) return;
     
-    LOGI("Initializing detection bypass system");
+    LOGI("Initializing");
     
     hookSystemCalls();
     hideModuleSignature();
     spoofBuildProps();
     
     m_initialized = true;
-    LOGI("Detection bypass system initialized");
+    LOGI("initialized");
 }
 
 void DetectionBypass::hookSystemCalls() {
